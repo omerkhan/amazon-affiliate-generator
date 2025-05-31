@@ -1,6 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Navigation from '../components/Navigation';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function AmazonAffiliateLinkGenerator() {
   const [amazonUrl, setAmazonUrl] = useState('');
@@ -8,6 +12,10 @@ export default function AmazonAffiliateLinkGenerator() {
   const [generatedLink, setGeneratedLink] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const { user } = useAuth();
+  const router = useRouter();
 
   // Load saved affiliate code on component mount
   useEffect(() => {
@@ -105,8 +113,49 @@ export default function AmazonAffiliateLinkGenerator() {
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
 
+  const saveAffiliateLink = async () => {
+    if (!user) {
+      // If not logged in, redirect to sign in page
+      router.push('/signin');
+      return;
+    }
+
+    if (!generatedLink) {
+      setError('Please generate a link first');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setSaveSuccess(false);
+      
+      const { data, error } = await supabase
+        .from('saved_links')
+        .insert([
+          {
+            user_id: user.id,
+            original_url: amazonUrl,
+            affiliate_link: generatedLink,
+            affiliate_code: affiliateCode
+          }
+        ]);
+        
+      if (error) throw error;
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000); // Clear success message after 3 seconds
+    } catch (error) {
+      console.error('Error saving link:', error);
+      setError('Failed to save your link. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+      <Navigation />
+      <div className="p-8">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -184,6 +233,42 @@ export default function AmazonAffiliateLinkGenerator() {
                     {copied ? '✓' : 'Copy'}
                   </button>
                 </div>
+                
+                {/* Save Link Button (only shown when user is logged in) */}
+                <div className="mt-4">
+                  <button
+                    onClick={saveAffiliateLink}
+                    disabled={saving}
+                    className={`w-full py-2 rounded transition-all duration-200 flex justify-center items-center ${
+                      saving 
+                        ? 'bg-blue-300 cursor-not-allowed' 
+                        : saveSuccess
+                          ? 'bg-blue-500 scale-95'
+                          : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02]'
+                    } text-white`}
+                  >
+                    {saving ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </span>
+                    ) : saveSuccess ? (
+                      <span className="flex items-center">
+                        <svg className="-ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Saved!
+                      </span>
+                    ) : user ? (
+                      'Save to My Links'
+                    ) : (
+                      'Sign in to Save'
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -208,6 +293,7 @@ export default function AmazonAffiliateLinkGenerator() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
