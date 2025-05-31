@@ -1,12 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function AmazonAffiliateLinkGenerator() {
   const [amazonUrl, setAmazonUrl] = useState('');
   const [affiliateCode, setAffiliateCode] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  // Load saved affiliate code on component mount
+  useEffect(() => {
+    const savedCode = localStorage.getItem('amazonAffiliateCode');
+    if (savedCode) {
+      setAffiliateCode(savedCode);
+    }
+  }, []);
+
+  // Save affiliate code whenever it changes
+  useEffect(() => {
+    if (affiliateCode.trim()) {
+      localStorage.setItem('amazonAffiliateCode', affiliateCode);
+    }
+  }, [affiliateCode]);
 
   const extractASIN = (url) => {
     // Match different Amazon URL patterns
@@ -85,6 +101,8 @@ export default function AmazonAffiliateLinkGenerator() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
 
   return (
@@ -157,9 +175,13 @@ export default function AmazonAffiliateLinkGenerator() {
                   />
                   <button
                     onClick={copyToClipboard}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                    className={`px-4 py-2 text-white rounded transition-all duration-200 ${
+                      copied 
+                        ? 'bg-green-500 scale-95' 
+                        : 'bg-green-600 hover:bg-green-700 hover:scale-105'
+                    }`}
                   >
-                    Copy
+                    {copied ? '✓' : 'Copy'}
                   </button>
                 </div>
               </div>
