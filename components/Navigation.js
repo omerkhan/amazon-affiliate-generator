@@ -26,6 +26,12 @@ export default function Navigation() {
               <>
                 {user ? (
                   <div className="flex items-center space-x-4">
+                    <Link
+                      href="/mylinks"
+                      className="text-gray-700 hover:text-orange-500 font-medium"
+                    >
+                      My Links
+                    </Link>
                     <span className="text-gray-700">
                       {user.email}
                     </span>
