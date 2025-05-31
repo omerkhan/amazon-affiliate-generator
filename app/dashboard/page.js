@@ -96,7 +96,7 @@ export default function Dashboard() {
               </div>
             ) : savedLinks.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                <p>You haven't saved any affiliate links yet.</p>
+                <p>{"You haven't saved any affiliate links yet."}</p>
                 <button
                   onClick={() => router.push('/')}
                   className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
